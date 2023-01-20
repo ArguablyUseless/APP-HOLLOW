@@ -1,5 +1,5 @@
 [package]
-name = "app-hollow-backend"
+name = "project_software_engineering_request"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,8 +7,16 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8.5"
-rocket = {version = "0.5.0-rc.2", features=["json"]}
+rocket = {version = "0.5.0-rc.2", features = ["json"]}
+serde = "1.0.136"
+chrono = "0.4"
 surrealdb = "1.0.0-beta.8"
 tokio = {version = "1.24.1", features=["full"]}
 paho-mqtt = "0.12"
 async-std = "1.12.0"
+geocoding = "*"
+reqwest = "0.11.13"
+
+
+
+

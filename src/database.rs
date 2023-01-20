@@ -11,7 +11,7 @@ static mut DATABASE: Option<Database> = None;
 
 const CONFIG_NAMESPACE: &str = "test";
 const CONFIG_DATABASE: &str = "test";
-const CONFIG_DATASTORE: &str = "memory";
+const CONFIG_DATASTORE: &str = "file://data.db";
 
 /// Init the database with the defined parameters.
 /// Throw a warning if the database has already been initialized.
@@ -21,7 +21,7 @@ pub async fn init_database() {
             eprintln!("[Warning]: The database has already been initialized!");
             return;
         }
-        
+
         let db = Database::new(
             CONFIG_NAMESPACE,
             CONFIG_DATABASE,

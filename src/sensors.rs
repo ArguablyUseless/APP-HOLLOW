@@ -70,7 +70,7 @@ pub fn start_mqtt() {
 
         println!("[Info]: Subscribing to topics: {:?}", TOPICS);
         cli.subscribe_many(TOPICS, QOS).await?;
-        
+
         // Just loop on incoming messages.
         println!("[Info]: Connected successfully, waiting for messages...");
 
@@ -146,13 +146,14 @@ async fn push_to_db(msg: DBMessage) {
 
     // Add the payload to the payload table
     db.query(format!(
-        "CREATE payload SET device = device:`{}`, light = {}, pressure = {}, humidity = {}, indoor_temperature = {}, outdoor_temperature = {}",
+        "CREATE payload SET device = device:`{}`, light = {}, pressure = {}, humidity = {}, indoor_temperature = {}, outdoor_temperature = {}, timestamp = '{}'",
         msg.device.id,
         msg.payload.light.map_or("null".to_string(), |x| format!("<float> {}", x)),
         msg.payload.pressure.map_or("null".to_string(), |x| format!("<float> {}", x)),
         msg.payload.humidity.map_or("null".to_string(), |x| format!("<float> {}", x)),
         msg.payload.in_temperature.map_or("null".to_string(), |x| format!("<float> {}", x)),
         msg.payload.out_temperature.map_or("null".to_string(), |x| format!("<float> {}", x)),
+        msg.payload.timestamp
     ).as_str(), None).await.unwrap();
 
     // Add the location to the location table
@@ -161,12 +162,12 @@ async fn push_to_db(msg: DBMessage) {
         msg.device.id,
         msg.location.latitude,
         msg.location.longitude,
-        msg.location.altitude,
+        msg.location.altitude
     ).as_str(), None).await.unwrap();
 
     // Add the settings to the settings table
     db.query(format!(
-        "CREATE settings SET device = device:`{}`, bandwidth = {}, spreading_factor = '{}', coding_rate = '{}', frequency = '{}', rssi = '{}', channel_rssi = '{}', battery_voltage = '{}', snr = '{}'",
+        "CREATE settings SET device = device:`{}`, bandwidth = {}, spreading_factor = '{}', coding_rate = '{}', frequency = '{}', rssi = '{}', channel_rssi = '{}', battery_voltage = {}, snr = '{}'",
         msg.device.id,
         msg.settings.bandwidth,
         msg.settings.spreading_factor,
@@ -179,7 +180,7 @@ async fn push_to_db(msg: DBMessage) {
     ).as_str(), None).await.unwrap();
 }
 
-/// Decode the data as [`Json`] for the py-saxion sensor 
+/// Decode the data as [`Json`] for the py-saxion sensor
 /// If the function fails to decode the message, it'll return None,
 /// otherwise it'll just return the decoded data as a [`DBMessage`]
 fn decode_py_saxion(msg: &str) -> Option<DBMessage> {
@@ -206,39 +207,40 @@ fn decode_py_saxion(msg: &str) -> Option<DBMessage> {
     let bandwidth = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("bandwidth")?.as_i64()?;
     let spreading_factor = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("spreading_factor")?.as_i64()?;
     let coding_rate = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("coding_rate")?.as_str()?;
-    
-    let frequency = json.get("uplink_message")?.get("settings")?.get("frequency")?.as_str()?; 
 
-    Some(DBMessage { 
-        device: DBDevice { 
-            id: device_id.to_string(), 
-            name: "py saxion".to_string(), 
+    let frequency = json.get("uplink_message")?.get("settings")?.get("frequency")?.as_str()?;
+
+    Some(DBMessage {
+        device: DBDevice {
+            id: device_id.to_string(),
+            name: "py saxion".to_string(),
             description: "saxion's py sensor".to_string(),
             timestamp: timestamp.to_string()
-        }, settings: DBSettings { 
-            bandwidth, 
-            spreading_factor: spreading_factor.to_string(), 
-            coding_rate: coding_rate.to_string(), 
-            frequency: frequency.to_string(), 
-            rssi: rssi.to_string(), 
-            channel_rssi: channel_rssi.to_string(), 
-            snr: snr.to_string(), 
-            battery_voltage: None 
-        }, payload: DBPayload { 
-            in_temperature: Some(temperature), 
-            out_temperature: None, 
-            light: Some(light), 
-            pressure: Some(pressure), 
-            humidity: None 
-        }, location: DBLocation { 
-            latitude: latitude.to_string(), 
-            longitude: longitude.to_string(), 
+        }, settings: DBSettings {
+            bandwidth,
+            spreading_factor: spreading_factor.to_string(),
+            coding_rate: coding_rate.to_string(),
+            frequency: frequency.to_string(),
+            rssi: rssi.to_string(),
+            channel_rssi: channel_rssi.to_string(),
+            snr: snr.to_string(),
+            battery_voltage: None
+        }, payload: DBPayload {
+            in_temperature: Some(temperature),
+            out_temperature: None,
+            light: Some(light),
+            pressure: Some(pressure),
+            humidity: None,
+            timestamp: timestamp.to_string()
+        }, location: DBLocation {
+            latitude: latitude.to_string(),
+            longitude: longitude.to_string(),
             altitude: altitude
         }
     })
 }
 
-/// Decode the data as [`Json`] for the py-wierden sensor 
+/// Decode the data as [`Json`] for the py-wierden sensor
 /// If the function fails to decode the message, it'll return None,
 /// otherwise it'll just return the decoded data as a [`DBMessage`]
 fn decode_py_wierden(msg: &str) -> Option<DBMessage> {
@@ -264,33 +266,34 @@ fn decode_py_wierden(msg: &str) -> Option<DBMessage> {
     let bandwidth = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("bandwidth")?.as_i64()?;
     let spreading_factor = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("spreading_factor")?.as_i64()?;
     let coding_rate = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("coding_rate")?.as_str()?;
-    
-    let frequency = json.get("uplink_message")?.get("settings")?.get("frequency")?.as_str()?; 
 
-    Some(DBMessage { 
-        device: DBDevice { 
-            id: device_id.to_string(), 
-            name: "py wierden".to_string(), 
+    let frequency = json.get("uplink_message")?.get("settings")?.get("frequency")?.as_str()?;
+
+    Some(DBMessage {
+        device: DBDevice {
+            id: device_id.to_string(),
+            name: "py wierden".to_string(),
             description: "wierden's py sensor".to_string(),
             timestamp: timestamp.to_string()
-        }, settings: DBSettings { 
-            bandwidth, 
-            spreading_factor: spreading_factor.to_string(), 
-            coding_rate: coding_rate.to_string(), 
-            frequency: frequency.to_string(), 
-            rssi: rssi.to_string(), 
-            channel_rssi: channel_rssi.to_string(), 
-            snr: snr.to_string(), 
-            battery_voltage: None 
-        }, payload: DBPayload { 
-            in_temperature: Some(temperature), 
-            out_temperature: None, 
-            light: Some(light), 
-            pressure: Some(pressure), 
-            humidity: None 
-        }, location: DBLocation { 
-            latitude: latitude.to_string(), 
-            longitude: longitude.to_string(), 
+        }, settings: DBSettings {
+            bandwidth,
+            spreading_factor: spreading_factor.to_string(),
+            coding_rate: coding_rate.to_string(),
+            frequency: frequency.to_string(),
+            rssi: rssi.to_string(),
+            channel_rssi: channel_rssi.to_string(),
+            snr: snr.to_string(),
+            battery_voltage: None
+        }, payload: DBPayload {
+            in_temperature: Some(temperature),
+            out_temperature: None,
+            light: Some(light),
+            pressure: Some(pressure),
+            humidity: None,
+            timestamp: timestamp.to_string()
+        }, location: DBLocation {
+            latitude: latitude.to_string(),
+            longitude: longitude.to_string(),
             altitude: altitude
         }
     })
@@ -307,7 +310,7 @@ fn lux_to_linear(value: f64) -> f64 {
 }
 
 
-/// Decode the data as [`Json`] for the lht-wierden sensor 
+/// Decode the data as [`Json`] for the lht-wierden sensor
 /// If the function fails to decode the message, it'll return None,
 /// otherwise it'll just return the decoded data as a [`DBMessage`]
 fn decode_lht_wierden(msg: &str) -> Option<DBMessage> {
@@ -334,39 +337,40 @@ fn decode_lht_wierden(msg: &str) -> Option<DBMessage> {
     let bandwidth = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("bandwidth")?.as_i64()?;
     let spreading_factor = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("spreading_factor")?.as_i64()?;
     let coding_rate = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("coding_rate")?.as_str()?;
-    
-    let frequency = json.get("uplink_message")?.get("settings")?.get("frequency")?.as_str()?; 
 
-    Some(DBMessage { 
-        device: DBDevice { 
-            id: device_id.to_string(), 
-            name: "lht wierden".to_string(), 
+    let frequency = json.get("uplink_message")?.get("settings")?.get("frequency")?.as_str()?;
+
+    Some(DBMessage {
+        device: DBDevice {
+            id: device_id.to_string(),
+            name: "lht wierden".to_string(),
             description: "wierden's lht sensor".to_string(),
             timestamp: timestamp.to_string()
-        }, settings: DBSettings { 
-            bandwidth, 
-            spreading_factor: spreading_factor.to_string(), 
-            coding_rate: coding_rate.to_string(), 
-            frequency: frequency.to_string(), 
-            rssi: rssi.to_string(), 
-            channel_rssi: channel_rssi.to_string(), 
-            snr: snr.to_string(), 
-            battery_voltage: Some(battery_voltage) 
-        }, payload: DBPayload { 
-            in_temperature: None, 
-            out_temperature: Some(temperature), 
-            light: Some(light), 
-            pressure: None, 
-            humidity: Some(humidity) 
-        }, location: DBLocation { 
-            latitude: latitude.to_string(), 
-            longitude: longitude.to_string(), 
+        }, settings: DBSettings {
+            bandwidth,
+            spreading_factor: spreading_factor.to_string(),
+            coding_rate: coding_rate.to_string(),
+            frequency: frequency.to_string(),
+            rssi: rssi.to_string(),
+            channel_rssi: channel_rssi.to_string(),
+            snr: snr.to_string(),
+            battery_voltage: Some(battery_voltage)
+        }, payload: DBPayload {
+            in_temperature: None,
+            out_temperature: Some(temperature),
+            light: Some(light),
+            pressure: None,
+            humidity: Some(humidity),
+            timestamp: timestamp.to_string()
+        }, location: DBLocation {
+            latitude: latitude.to_string(),
+            longitude: longitude.to_string(),
             altitude: altitude
         }
     })
 }
 
-/// Decode the data as [`Json`] for the lht-gronau sensor 
+/// Decode the data as [`Json`] for the lht-gronau sensor
 /// If the function fails to decode the message, it'll return None,
 /// otherwise it'll just return the decoded data as a [`DBMessage`]
 fn decode_lht_gronau(msg: &str) -> Option<DBMessage> {
@@ -392,40 +396,41 @@ fn decode_lht_gronau(msg: &str) -> Option<DBMessage> {
     let bandwidth = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("bandwidth")?.as_i64()?;
     let spreading_factor = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("spreading_factor")?.as_i64()?;
     let coding_rate = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("coding_rate")?.as_str()?;
-    
-    let frequency = json.get("uplink_message")?.get("settings")?.get("frequency")?.as_str()?; 
 
-    Some(DBMessage { 
-        device: DBDevice { 
-            id: device_id.to_string(), 
-            name: "lht gronau".to_string(), 
+    let frequency = json.get("uplink_message")?.get("settings")?.get("frequency")?.as_str()?;
+
+    Some(DBMessage {
+        device: DBDevice {
+            id: device_id.to_string(),
+            name: "lht gronau".to_string(),
             description: "gronau's lht sensor".to_string(),
             timestamp: timestamp.to_string()
-        }, settings: DBSettings { 
-            bandwidth, 
-            spreading_factor: spreading_factor.to_string(), 
-            coding_rate: coding_rate.to_string(), 
-            frequency: frequency.to_string(), 
-            rssi: rssi.to_string(), 
-            channel_rssi: channel_rssi.to_string(), 
-            snr: snr.to_string(), 
-            battery_voltage: Some(battery_voltage) 
-        }, payload: DBPayload { 
-            in_temperature: None, 
-            out_temperature: Some(temperature), 
-            light: Some(light), 
-            pressure: None, 
-            humidity: Some(humidity) 
-        }, location: DBLocation { 
-            latitude: latitude.to_string(), 
-            longitude: longitude.to_string(), 
+        }, settings: DBSettings {
+            bandwidth,
+            spreading_factor: spreading_factor.to_string(),
+            coding_rate: coding_rate.to_string(),
+            frequency: frequency.to_string(),
+            rssi: rssi.to_string(),
+            channel_rssi: channel_rssi.to_string(),
+            snr: snr.to_string(),
+            battery_voltage: Some(battery_voltage)
+        }, payload: DBPayload {
+            in_temperature: None,
+            out_temperature: Some(temperature),
+            light: Some(light),
+            pressure: None,
+            humidity: Some(humidity),
+            timestamp: timestamp.to_string()
+        }, location: DBLocation {
+            latitude: latitude.to_string(),
+            longitude: longitude.to_string(),
             altitude: 0.0
         }
     })
 }
 
 
-/// Decode the data as [`Json`] for the lht-saxion sensor 
+/// Decode the data as [`Json`] for the lht-saxion sensor
 /// If the function fails to decode the message, it'll return None,
 /// otherwise it'll just return the decoded data as a [`DBMessage`]
 fn decode_lht_saxion(msg: &str) -> Option<DBMessage> {
@@ -452,33 +457,34 @@ fn decode_lht_saxion(msg: &str) -> Option<DBMessage> {
     let bandwidth = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("bandwidth")?.as_i64()?;
     let spreading_factor = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("spreading_factor")?.as_i64()?;
     let coding_rate = json.get("uplink_message")?.get("settings")?.get("data_rate")?.get("lora")?.get("coding_rate")?.as_str()?;
-    
-    let frequency = json.get("uplink_message")?.get("settings")?.get("frequency")?.as_str()?; 
 
-    Some(DBMessage { 
-        device: DBDevice { 
-            id: device_id.to_string(), 
-            name: "lht saxion".to_string(), 
+    let frequency = json.get("uplink_message")?.get("settings")?.get("frequency")?.as_str()?;
+
+    Some(DBMessage {
+        device: DBDevice {
+            id: device_id.to_string(),
+            name: "lht saxion".to_string(),
             description: "saxion's lht sensor".to_string(),
             timestamp: timestamp.to_string()
-        }, settings: DBSettings { 
-            bandwidth, 
-            spreading_factor: spreading_factor.to_string(), 
-            coding_rate: coding_rate.to_string(), 
-            frequency: frequency.to_string(), 
-            rssi: rssi.to_string(), 
-            channel_rssi: channel_rssi.to_string(), 
-            snr: snr.to_string(), 
-            battery_voltage: Some(battery_voltage) 
-        }, payload: DBPayload { 
+        }, settings: DBSettings {
+            bandwidth,
+            spreading_factor: spreading_factor.to_string(),
+            coding_rate: coding_rate.to_string(),
+            frequency: frequency.to_string(),
+            rssi: rssi.to_string(),
+            channel_rssi: channel_rssi.to_string(),
+            snr: snr.to_string(),
+            battery_voltage: Some(battery_voltage)
+        }, payload: DBPayload {
             in_temperature: Some(in_temperature),
-            out_temperature: Some(out_temperature), 
-            light: None, 
-            pressure: None, 
-            humidity: Some(humidity) 
-        }, location: DBLocation { 
-            latitude: latitude.to_string(), 
-            longitude: longitude.to_string(), 
+            out_temperature: Some(out_temperature),
+            light: None,
+            pressure: None,
+            humidity: Some(humidity),
+            timestamp: timestamp.to_string()
+        }, location: DBLocation {
+            latitude: latitude.to_string(),
+            longitude: longitude.to_string(),
             altitude: altitude
         }
     })
@@ -526,4 +532,5 @@ struct DBPayload {
     pub light: Option<f64>,
     pub pressure: Option<f64>,
     pub humidity: Option<f64>,
+    pub timestamp: String
 }
